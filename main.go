@@ -21,7 +21,7 @@ func main() {
 
 	dirs := strings.Split(targetDirectories, ", ")
 	//do nothing unless explicitly requested
-	if len(dirs) == 0 {
+	if targetDirectories == "" || len(dirs) == 0 {
 		flag.Usage()
 		os.Exit(1)
 	}
