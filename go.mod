@@ -1,4 +1,4 @@
-module github.com/michaelgov-ctrl/ransom
+module github.com/michaelgov-ctrl/CI-102-FinalProject
 
 go 1.23.1
 
