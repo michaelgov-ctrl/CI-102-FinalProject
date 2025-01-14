@@ -1,4 +1,4 @@
-module github.com/michaelgov-ctrl/CI-102-FinalProject
+module github.com/michaelgov-ctrl/CI-102-SecurityProject
 
 go 1.23.1
 
