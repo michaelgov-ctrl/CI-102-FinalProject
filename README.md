@@ -7,14 +7,11 @@ My team chose the ransomeware™. To provide a brief example of the functionalit
 
 [usage]
 
--encrypt
-    
+-encrypt:
     Pass to encrypt data
 
--target_directories string
-    
+-target_directories string:
     [required] Comma-separated list of directories to encrypt
 
--worker_count int
-    
+-worker_count int:
     Number of workers to encrypt/decrpyt with (default 5)
