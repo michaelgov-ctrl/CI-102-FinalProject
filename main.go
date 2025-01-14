@@ -8,29 +8,31 @@ import (
 )
 
 func main() {
-	var encrypt_dirs string
-	flag.StringVar(&encrypt_dirs, "encrypt_dirs", "", "Comma-separated list of directories to encrypt")
+	var targetDirectories string
+	flag.StringVar(&targetDirectories, "target_directories", "", "[required] Comma-separated list of directories to encrypt")
+
+	var workerCount int
+	flag.IntVar(&workerCount, "worker_count", 5, "Number of workers to encrypt/decrpyt with")
+
+	var encrypt bool
+	flag.BoolVar(&encrypt, "encrypt", false, "Pass to encrypt data")
+
 	flag.Parse()
 
-	dirs := strings.Split(encrypt_dirs, ", ")
-	//yeah we're not gonna encrypt unless explicitly requested
+	dirs := strings.Split(targetDirectories, ", ")
+	//do nothing unless explicitly requested
 	if len(dirs) == 0 {
 		flag.Usage()
 		os.Exit(1)
 	}
 
-	workerCount := 5
-	encryptor := Encryptor{
-		Key:            []byte(`DEADBEEFDEADBEEFDEADBEEFDEADBEEF`),
-		EncryptionChan: make(chan string),
-		JobChan:        make(chan string, workerCount),
-		ErrChan:        make(chan error),
-		Done:           make(chan struct{}),
-		WorkerCount:    workerCount,
+	cryptor := NewCryptor(withWorkerCount(workerCount), withEncryption(encrypt))
+
+	cryptor.EnumerateDirectories(dirs)
+
+	log.Printf("%s files with chacha20 stream cipher\nkey: %s\n", cryptor.EncryptingOrDecrypting, cryptor.Key)
+	err := cryptor.ListenAndManageEncryption()
+	if err != nil {
+		log.Fatal(err)
 	}
-
-	encryptor.EnumerateDirectories(dirs)
-
-	log.Printf("encrypting files with chacha20 stream cipher\nkey: %s\n", encryptor.Key)
-	log.Fatal(encryptor.ListenAndEncrypt())
 }
