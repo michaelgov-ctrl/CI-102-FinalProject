@@ -57,6 +57,10 @@ type Option func(*Cryptor)
 
 func WithKey(key []byte) Option {
 	return func(c *Cryptor) {
+		if len(key) != 32 {
+			panic("provided key does not meet 32 byte requirement")
+		}
+
 		c.Key = key
 	}
 }
