@@ -38,7 +38,6 @@ func TestEncryptDecryptCryptor(t *testing.T) {
 
 		// decrypt
 		var plaintextOut bytes.Buffer
-		// strings.NewReader(testStrs[i].cipherText.String())
 		if err := cryptor.StreamCrypt(&ciphertextOut, &plaintextOut); err != nil {
 			t.Fatal("decryption error", "test", test, "error", err)
 		}
