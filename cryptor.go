@@ -24,6 +24,7 @@ var (
 
 type Cryptor struct {
 	Key                    []byte
+	Nonce                  []byte
 	EncryptionChan         chan string
 	JobChan                chan string
 	ErrChan                chan error
@@ -36,6 +37,7 @@ func NewCryptor(options ...Option) *Cryptor {
 	var wc = 5
 	c := &Cryptor{
 		Key:                    StaticKey,
+		Nonce:                  StaticNonce,
 		EncryptionChan:         make(chan string),
 		JobChan:                make(chan string, wc),
 		ErrChan:                make(chan error),
@@ -53,14 +55,26 @@ func NewCryptor(options ...Option) *Cryptor {
 
 type Option func(*Cryptor)
 
-func withWorkerCount(workerCount int) Option {
+func WithKey(key []byte) Option {
+	return func(c *Cryptor) {
+		c.Key = key
+	}
+}
+
+func WithNonce(nonce []byte) Option {
+	return func(c *Cryptor) {
+		c.Nonce = nonce
+	}
+}
+
+func WithWorkerCount(workerCount int) Option {
 	return func(c *Cryptor) {
 		c.JobChan = make(chan string, workerCount)
 		c.WorkerCount = workerCount
 	}
 }
 
-func withEncryption(b bool) Option {
+func WithEncryption(b bool) Option {
 	return func(c *Cryptor) {
 		if b {
 			c.EncryptingOrDecrypting = Encrypting
@@ -109,7 +123,7 @@ func (c *Cryptor) EnumerateDirectories(dirs []string) {
 	}()
 }
 
-func (c *Cryptor) CryptFunc(path string, f func(target io.Reader, outfile string) error) error {
+func (c *Cryptor) CryptFunc(path string, f func(target io.Reader, out io.Writer) error) error {
 	target, err := os.Open(path)
 	if err != nil {
 		return err
@@ -121,7 +135,13 @@ func (c *Cryptor) CryptFunc(path string, f func(target io.Reader, outfile string
 		outpath = strings.TrimSuffix(path, EncryptedExtension)
 	}
 
-	if err := f(target, outpath); err != nil {
+	out, err := os.Create(outpath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	if err := f(target, out); err != nil {
 		return err
 	}
 
@@ -129,43 +149,14 @@ func (c *Cryptor) CryptFunc(path string, f func(target io.Reader, outfile string
 	return os.Remove(path)
 }
 
-// TODO: write some tests
-func (c *Cryptor) Encrypt(target io.Reader, outfile string) error {
-	out, err := os.Create(outfile)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	realSmooth, err := chacha20.NewUnauthenticatedCipher(c.Key, StaticNonce)
+func (c *Cryptor) StreamCrypt(target io.Reader, out io.Writer) error {
+	realSmooth, err := chacha20.NewUnauthenticatedCipher(c.Key, c.Nonce)
 	if err != nil {
 		return err
 	}
 
 	writer := cipher.StreamWriter{
 		S: realSmooth,
-		W: out,
-	}
-
-	_, err = io.Copy(writer, target)
-	return err
-}
-
-// TODO: write some tests
-func (c *Cryptor) Decrypt(target io.Reader, outfile string) error {
-	out, err := os.Create(outfile)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	lessSmooth, err := chacha20.NewUnauthenticatedCipher(StaticKey, StaticNonce)
-	if err != nil {
-		panic(err)
-	}
-
-	writer := cipher.StreamWriter{
-		S: lessSmooth,
 		W: out,
 	}
 

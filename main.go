@@ -26,7 +26,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cryptor := NewCryptor(withWorkerCount(workerCount), withEncryption(encrypt))
+	cryptor := NewCryptor(WithWorkerCount(workerCount), WithEncryption(encrypt))
 
 	cryptor.EnumerateDirectories(dirs)
 
