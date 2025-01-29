@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 	"strings"
+
+	cryptor "github.com/michaelgov-ctrl/CI-102-SecurityProject/pkg"
 )
 
 func main() {
@@ -15,19 +17,34 @@ func main() {
 	var workerCount int
 	flag.IntVar(&workerCount, "worker_count", 5, "Number of workers to encrypt/decrpyt with")
 
-	var encrypt bool
+	var encrypt, decrypt bool
 	flag.BoolVar(&encrypt, "encrypt", false, "Pass to encrypt data")
+	flag.BoolVar(&decrypt, "decrypt", false, "Pass to decrypt data")
 
 	flag.Parse()
 
 	dirs := strings.Split(targetDirectories, ", ")
-	//do nothing unless explicitly requested
-	if targetDirectories == "" || len(dirs) == 0 {
+
+	if (targetDirectories == "" || len(dirs) == 0) || encrypt == decrypt {
 		flag.Usage()
 		os.Exit(1)
 	}
 
-	cryptor := NewCryptor(WithWorkerCount(workerCount), WithEncryption(encrypt), WithKey([]byte(key)))
+	opts := []cryptor.Option{
+		cryptor.WithWorkerCount(workerCount),
+	}
+
+	state := cryptor.Decrypting
+	if encrypt {
+		state = cryptor.Encrypting
+	}
+	opts = append(opts, cryptor.WithEncryptionState(state))
+
+	if key != "" {
+		opts = append(opts, cryptor.WithKey([]byte(key)))
+	}
+
+	cryptor := cryptor.NewCryptor(opts...)
 
 	cryptor.EnumerateDirectories(dirs)
 

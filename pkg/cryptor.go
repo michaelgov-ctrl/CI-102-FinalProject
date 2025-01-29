@@ -1,4 +1,4 @@
-package main
+package cryptor
 
 import (
 	"crypto/cipher"
@@ -58,7 +58,7 @@ type Option func(*Cryptor)
 func WithKey(key []byte) Option {
 	return func(c *Cryptor) {
 		if len(key) != 32 {
-			panic("provided key does not meet 32 byte requirement")
+			panic("invalid key length")
 		}
 
 		c.Key = key
@@ -78,13 +78,9 @@ func WithWorkerCount(workerCount int) Option {
 	}
 }
 
-func WithEncryption(b bool) Option {
+func WithEncryptionState(s CryptorState) Option {
 	return func(c *Cryptor) {
-		if b {
-			c.EncryptingOrDecrypting = Encrypting
-			return
-		}
-		c.EncryptingOrDecrypting = Decrypting
+		c.EncryptingOrDecrypting = s
 	}
 }
 
