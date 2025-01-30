@@ -164,7 +164,7 @@ func (c *Cryptor) StreamCrypt(target io.Reader, out io.Writer) error {
 	return err
 }
 
-func (c *Cryptor) ListenAndManageEncryption() error {
+func (c *Cryptor) ManageEncryption() error {
 	var wg sync.WaitGroup
 
 	wg.Add(c.WorkerCount)

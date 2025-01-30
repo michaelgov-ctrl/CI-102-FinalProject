@@ -49,7 +49,7 @@ func main() {
 	cryptor.EnumerateDirectories(dirs)
 
 	log.Printf("%s files with chacha20 stream cipher\nkey: %s\n", cryptor.EncryptingOrDecrypting, cryptor.Key)
-	err := cryptor.ListenAndManageEncryption()
+	err := cryptor.ManageEncryption()
 	if err != nil {
 		log.Fatal(err)
 	}
